@@ -45,17 +45,27 @@ def watch_and_notify_events():
     for event in client.events(filters=event_filters, decode=True):
         container_id = event['Actor']['ID'][:12]
         attributes = event['Actor']['Attributes']
-        when = time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(event['time']))
 
-        message = ":rotating_light:  At _{}_ your container *{}* (_{}_) died. Image: *{}* Exit Code: *{}* Origin: *{}*" \
-            .format(when,
-                    attributes['name'],
-                    container_id,
-                    attributes['image'],
-                    attributes['exitCode'],
-                    socket.gethostname())
+        # check on exitCode.
+        exit_code = attributes["exitCode"]
+        if int(exit_code) == 0:
+            # container died because it successfully finished his task
+            pass
+        elif int(exit_code) == 137:
+            # container died because it was manually stoped... (I guess)
+            pass
+        else:
+            when = time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(event['time']))
 
-        send_message(slack_channel, message)
+            message = ":rotating_light:  At _{}_ your container *{}* (_{}_) died. Image: *{}* Exit Code: *{}* Origin: *{}*" \
+                .format(when,
+                        attributes['name'],
+                        container_id,
+                        attributes['image'],
+                        attributes['exitCode'],
+                        socket.gethostname())
+
+            send_message(slack_channel, message)
 
 
 def send_message(channel, message):
